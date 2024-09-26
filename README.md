@@ -1,5 +1,5 @@
 # waves-examples
-Examples to use waves
+Examples to use waves api -> https://awaaz-docs.smallest.ai/introduction
 
 ## save_audio_file
 Examples on how to use the api to generate audio files. This section also deals with the nuances of different parameters in the payload.
