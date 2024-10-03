@@ -5,7 +5,9 @@ Lightning is the world’s fastest text to speech model, generating around 10 se
 Documentation for Waves: https://awaaz-docs.smallest.ai/introduction
 
 example_audios: The folder containing example of the some speakers in English as well as Hindi. Other speakers can also be explored
+
 generate_audio_local/get_speech_lightning_english_api_example.py: Example script to call lightning API for english language and save file to local
+
 generate_audio_local/get_speech_lightning_english_api_example.py: Example script to call lightning API for hindi language and save file to local
 
 vocode_example: examples on how to integrate the lightning api with vocode
