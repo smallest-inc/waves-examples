@@ -1,11 +1,7 @@
-# waves-examples
-Examples to use waves api -> https://awaaz-docs.smallest.ai/introduction
+## Waves Examples
 
-## save_audio_file
-Examples on how to use the api to generate audio files. This section also deals with the nuances of different parameters in the payload.
+### Lightning
+Lightning is the world’s fastest text to speech model, generating around 10 seconds of hyper-realistic audio in just 100ms, all at once, no streaming.
 
-## telephony_integration_thunder
-Examples on how to use the api with telephony providers. The current example covers integration with Vonage. Integration examples with twilio, plivo are coming soon.
-
-## Vocode_example
-Examples on how to integrate the api with vocode.
+### Thunder
+Thunder is streaming text to speech model with gives hyper realistic audios with time-to-first-bytes as less than 200ms
