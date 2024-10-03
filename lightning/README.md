@@ -10,3 +10,6 @@ Parameters:
 
 1. SAMPLE_RATE: Output sample rate required 
 2. VOICE_ID: Voice ID vary based on language, english has 4 speakers and hindi has 3 speakers
+
+[example_1.webm](https://github.com/user-attachments/assets/06d99a1e-1f2e-4be6-aafe-06ba9834c024)
+
