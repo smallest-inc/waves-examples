@@ -23,7 +23,7 @@ Example 2:
 
 Example 3: 
 
-[example_6.webm](https://github.com/user-attachments/assets/f4dafc48-3217-4cb4-b951-49fca096b0a1)
+[example_3.webm](https://github.com/user-attachments/assets/f4dafc48-3217-4cb4-b951-49fca096b0a1)
 
 
 Hindi Example 1:
@@ -32,8 +32,7 @@ Hindi Example 1:
 
 Hindi Example 2: 
 
-[hindi_example_3.webm](https://github.com/user-attachments/assets/b63de689-c1f9-40f7-89c7-9bf7e2e68fca)
+[hindi_example_2.webm](https://github.com/user-attachments/assets/b63de689-c1f9-40f7-89c7-9bf7e2e68fca)
 
 Hindi Example 3: 
-
-[hindi_example_5.webm](https://github.com/user-attachments/assets/276bb31f-4738-4caa-b4ad-755dcea95c0b)
+[hindi_example_3.webm](https://github.com/user-attachments/assets/4652a2ec-a499-4990-9221-af8030f730a5)
