@@ -72,11 +72,6 @@ poetry install
 
 ```bash
 cd vocode-core/quickstarts
-python streaming_conversation_waves_lightning.py
-```
-
-```bash
-cd vocode-core/quickstarts
 python streaming_conversation_waves_thunder.py
 ```
 
