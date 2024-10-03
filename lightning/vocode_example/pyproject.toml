@@ -1,0 +1,139 @@
+[tool.poetry]
+name = "vocode"
+version = "0.1.114a2"
+description = "The all-in-one voice SDK"
+authors = ["Ajay Raj <ajay@vocode.dev>"]
+license = "MIT License"
+readme = "README.md"
+homepage = "https://github.com/vocodedev/vocode-python"
+
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+aiohttp = "^3.9.5"
+anthropic = "^0.28.0"
+azure-cognitiveservices-speech = "^1.38.0"
+elevenlabs = "^1.2.2"
+fastapi = "^0.111.0"
+janus = "^1.0.0"
+jinja2 = "^3.1.4"
+jsonschema = "^4.22.0"
+loguru = "^0.7.2"
+miniaudio = "^1.59.0"
+numpy = "^1.26.4"
+openai = "^1.30.5"
+opentelemetry-sdk = "^1.24.0"
+phonenumbers = "^8.13.37"
+pydantic = "^2.7.2"
+pydantic-settings = "^2.3.0"
+pydub = "^0.25.1"
+pyht = "^0.0.28"
+redis = "^5.0.4"
+requests = "^2.32.3"
+sentry-sdk = { extras = ["fastapi"], version = "^2.3.1" }
+sounddevice = "^0.4.7"
+tiktoken = "^0.7.0"
+uvicorn = "^0.30.0"
+websockets = "^12.0"
+nltk = "^3.8.1"
+
+# LLM Providers
+groq = { version = "^0.9.0", optional = true }
+
+# Synthesizers
+google-cloud-texttospeech = { version = "^2.16.3", optional = true }
+pvkoala = { version = "^2.0.1", optional = true }
+cartesia = { version = "^1.0.10", optional = true }
+
+# Transcribers
+google-cloud-speech = { version = "^2.26.0", optional = true }
+
+# Telephony
+twilio = { version = "^9.1.0", optional = true }
+vonage = { version = "^3.14.0", optional = true }
+
+# Langchain
+langchain = { version = "^0.2.3", optional = true }
+langchain-community = { version = "^0.2.4", optional = true }
+langchain-openai = { version = "^0.1.8", optional = true }
+langchain-anthropic = { version = "^0.1.15", optional = true }
+langchain-google-vertexai = { version = "^1.0.5", optional = true }
+
+# LiveKit
+livekit = { version = "^0.11.1", optional = true }
+
+[tool.poetry.group.lint.dependencies]
+black = "^24.4.2"
+isort = "^5.13.2"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10.0"
+pydub-stubs = "^0.25.1.0"
+types-redis = "^4.6.0"
+types-regex = "^2024.5.15.20240519"
+types-requests = "^2.32.0.20240523"
+
+[tool.poetry.group.dev.dependencies]
+aioresponses = "^0.7.6"
+coverage = "^7.5.3"
+fakeredis = "^2.23.2"
+pytest = "^8.2.1"
+pytest-asyncio = "^0.23.7"
+pytest-cov = "^5.0.0"
+pytest-env = "^1.1.3"
+pytest-httpx = "^0.30.0"
+pytest-mock = "^3.14.0"
+
+[tool.poetry.extras]
+synthesizers = [
+    "google-cloud-texttospeech",
+    "pvkoala",
+    "cartesia",
+]
+transcribers = ["google-cloud-speech"]
+telephony = ["twilio", "vonage"]
+langchain = ["langchain", "langchain-community"]
+langchain-extras = ["langchain-openai", "langchain-anthropic", "langchain-google-vertexai"]
+all = [
+    "google-cloud-texttospeech",
+    "pvkoala",
+    "google-cloud-speech",
+    "twilio",
+    "vonage",
+    "langchain",
+    "langchain-community",
+    "langchain-openai",
+    "langchain-anthropic",
+    "langchain-google-vertexai",
+    "cartesia",
+    "groq",
+    "livekit"
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+exclude = ["venv", ".venv"]
+explicit_package_bases = true
+
+
+[tool.pytest.ini_options]
+addopts = "--basetemp=/tmp/pytest"
+testpaths = ["tests"]
+
+[tool.pytest_env]
+ENVIRONMENT = "test"
+AZURE_OPENAI_API_BASE_EAST_US = "https://api.openai.com"
+AZURE_OPENAI_API_KEY_EAST_US = "test"
+
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
