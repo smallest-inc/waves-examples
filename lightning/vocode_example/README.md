@@ -75,11 +75,6 @@ cd vocode-core/quickstarts
 python streaming_conversation_waves_lightning.py
 ```
 
-```bash
-cd vocode-core/quickstarts
-python streaming_conversation_waves_thunder.py
-```
-
 # 📞 Phone call quickstarts
 
 - [Telephony Server - Self-hosted](https://docs.vocode.dev/open-source/telephony)
