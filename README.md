@@ -7,4 +7,4 @@ Lightning is the world’s fastest text to speech model, generating around 10 se
 Thunder is streaming text to speech model with gives hyper realistic audios with time-to-first-bytes as low as 200ms
 
 ### Documentation
-You can find the documentation to test out the models here - https://awaaz-docs.smallest.ai/introduction
+You can find the documentation to test out the Waves API here - https://awaaz-docs.smallest.ai/introduction
