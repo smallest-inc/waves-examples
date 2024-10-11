@@ -6,4 +6,4 @@ if [[ -z "$VIRTUAL_ENV" ]]; then
     exit 1
 fi
 
-pip install -e /home/hamees/waves-examples/lightning/livekit_example/livekit-plugins-smallest --config-settings editable_mode=strict
+pip install -e ./livekit-plugins-smallest --config-settings editable_mode=strict # change the path accordingly
