@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import numpy as np
 from dataclasses import dataclass
 from typing import Any
 
@@ -8,7 +9,7 @@ import aiohttp
 from livekit.agents import tts, utils
 
 from .log import logger
-from .models import TTSEncoding, TTSLanguages, TTSModels, TTSVoices
+from .models import TTSLanguages, TTSModels, TTSVoices, TTSEncoding
 
 API_BASE_URL = "https://waves-api.smallest.ai/api/v1"
 NUM_CHANNELS = 1
@@ -90,6 +91,8 @@ class ChunkedStream(tts.ChunkedStream):
     ) -> None:
         super().__init__()
         self._text, self._opts, self._session = text, opts, session
+        self._initial_buffer = bytearray()
+        self._fade_in_samples = int(0.05 * opts.sample_rate)  # 50ms fade-in
 
     @utils.log_exceptions(logger=logger)
     async def _main_task(self):
@@ -97,7 +100,7 @@ class ChunkedStream(tts.ChunkedStream):
             sample_rate=self._opts.sample_rate, num_channels=NUM_CHANNELS
         )
         request_id, segment_id = utils.shortuuid(), utils.shortuuid()
-
+        
         data = _to_smallest_options(self._opts)
         data["text"] = self._text
 
@@ -112,8 +115,27 @@ class ChunkedStream(tts.ChunkedStream):
                 error_text = await resp.text()
                 raise Exception(f"smallest.ai API error: {resp.status} - {error_text}")
             
-            async for data, _ in resp.content.iter_chunks():
-                for frame in bstream.write(data):
+            async for chunk, _ in resp.content.iter_chunks():
+                self._initial_buffer.extend(chunk)
+                if len(self._initial_buffer) >= self._fade_in_samples * 2:  # 16-bit samples
+                    break
+
+            # Apply fade-in to the initial buffer
+            samples = np.frombuffer(self._initial_buffer, dtype=np.int16)
+            fade_in = np.linspace(0, 1, self._fade_in_samples)
+            samples[:self._fade_in_samples] = (samples[:self._fade_in_samples] * fade_in).astype(np.int16)
+            
+            # Send the faded-in initial buffer
+            for frame in bstream.write(samples.tobytes()):
+                self._event_ch.send_nowait(
+                    tts.SynthesizedAudio(
+                        request_id=request_id, segment_id=segment_id, frame=frame
+                    )
+                )
+
+            # continue with the rest of the audio
+            async for chunk, _ in resp.content.iter_chunks():
+                for frame in bstream.write(chunk):
                     self._event_ch.send_nowait(
                         tts.SynthesizedAudio(
                             request_id=request_id, segment_id=segment_id, frame=frame
@@ -126,6 +148,7 @@ class ChunkedStream(tts.ChunkedStream):
                         request_id=request_id, segment_id=segment_id, frame=frame
                     )
                 )
+
 
 def _to_smallest_options(opts: _TTSOptions) -> dict[str, Any]:
     return {
