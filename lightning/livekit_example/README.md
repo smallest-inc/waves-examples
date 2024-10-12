@@ -1,6 +1,7 @@
 # Livekit Example
 
-This Example provides scripts and tools to perform standalone audio generation and build livekit voice assistants using the smallest's livekit plugin. Follow the steps below to set up and run the experiments.
+This Example provides scripts and tools to perform standalone audio generation and build livekit voice assistants using the smallest's livekit plugin. Follow the steps below to set up and run the experiments.   
+Please also refer to [smallest.ai](https://smallest.ai) plugin integration PR in the [livekit/agents](https://github.com/livekit/agents/pull/890) repository.  
 
 ## Common Steps
 
