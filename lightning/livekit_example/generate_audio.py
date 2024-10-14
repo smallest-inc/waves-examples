@@ -1,7 +1,7 @@
 import asyncio
 import aiohttp
 import wave
-from livekit.plugins import smallest, deepgram
+from livekit.plugins import smallest
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -31,11 +31,6 @@ async def test_tts():
                 wav_file.writeframes(frame_bytes)
 
         print("Audio saved to output.wav")
-
-        # Optionally, continue with STT if needed
-        deepgram_stt = deepgram.STT(http_session=session)
-        res = await deepgram_stt.recognize(buffer=frames)
-        print(res)
 
 # Run the async test
 if __name__ == "__main__":
