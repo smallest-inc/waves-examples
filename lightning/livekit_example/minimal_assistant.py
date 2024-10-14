@@ -45,7 +45,7 @@ async def entrypoint(ctx: JobContext):
         # use a model optimized for telephony
         dg_model = "nova-2-phonecall"
 
-    # Since smallest does not support streaming TTS, we can use it with a StreamAdapter (Optional)
+    # Since lightning model does not natively support streaming TTS, we can use it with a StreamAdapter (Optional)
     smallest_tts = tts.StreamAdapter(
         tts=smallest.TTS(),
         sentence_tokenizer=tokenize.basic.SentenceTokenizer(),
