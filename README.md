@@ -1,4 +1,4 @@
-![banner](twitter%201-100.jpg)
+![banner](https://github.com/user-attachments/assets/ffd7a495-ab07-403d-89ee-7aa814aae147)
 
 Here you can find guides and examples designed to help you get started with Waves.  
 
