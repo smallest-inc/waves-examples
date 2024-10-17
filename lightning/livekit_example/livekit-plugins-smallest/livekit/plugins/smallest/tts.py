@@ -134,7 +134,7 @@ class ChunkedStream(tts.ChunkedStream):
                     )
                 )
 
-            # process and send the rest of the audio while collecting the last buffer for fade-out
+            # Process and send the rest of the audio while collecting the last buffer for fade-out
             last_chunk = None
             async for chunk, _ in resp.content.iter_chunks():
                 if last_chunk is not None:
@@ -144,9 +144,9 @@ class ChunkedStream(tts.ChunkedStream):
                                 request_id=request_id, segment_id=segment_id, frame=frame
                             )
                         )
-                last_chunk = chunk  # keeping track of the last chunk for fade-out
+                last_chunk = chunk  # Keep track of the last chunk for fade-out
 
-            # apply fade-out to the last chunk
+            # Apply fade-out to the last chunk
             if last_chunk:
                 self._final_buffer.extend(last_chunk)
                 samples = np.frombuffer(self._final_buffer, dtype=np.int16)
@@ -161,7 +161,7 @@ class ChunkedStream(tts.ChunkedStream):
                         )
                     )
 
-            # flush any remaining audio
+            # Flush any remaining audio
             for frame in bstream.flush():
                 self._event_ch.send_nowait(
                     tts.SynthesizedAudio(
