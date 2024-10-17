@@ -91,7 +91,9 @@ class ChunkedStream(tts.ChunkedStream):
         super().__init__()
         self._text, self._opts, self._session = text, opts, session
         self._initial_buffer = bytearray()
-        self._fade_in_samples = int(0.05 * opts.sample_rate)  # 50ms fade-in
+        self._final_buffer = bytearray()
+        self._fade_in_samples = int(0.01 * opts.sample_rate)  # 10ms fade-in
+        self._fade_out_samples = int(0.01 * opts.sample_rate)  # 10ms fade-out
 
     @utils.log_exceptions(logger=logger)
     async def _main_task(self):
@@ -132,15 +134,34 @@ class ChunkedStream(tts.ChunkedStream):
                     )
                 )
 
-            # continue with the rest of the audio
+            # process and send the rest of the audio while collecting the last buffer for fade-out
+            last_chunk = None
             async for chunk, _ in resp.content.iter_chunks():
-                for frame in bstream.write(chunk):
+                if last_chunk is not None:
+                    for frame in bstream.write(last_chunk):
+                        self._event_ch.send_nowait(
+                            tts.SynthesizedAudio(
+                                request_id=request_id, segment_id=segment_id, frame=frame
+                            )
+                        )
+                last_chunk = chunk  # keeping track of the last chunk for fade-out
+
+            # apply fade-out to the last chunk
+            if last_chunk:
+                self._final_buffer.extend(last_chunk)
+                samples = np.frombuffer(self._final_buffer, dtype=np.int16)
+                fade_out = np.linspace(1, 0, self._fade_out_samples)
+                samples[-self._fade_out_samples:] = (samples[-self._fade_out_samples:] * fade_out).astype(np.int16)
+
+                # Send the faded-out final buffer
+                for frame in bstream.write(samples.tobytes()):
                     self._event_ch.send_nowait(
                         tts.SynthesizedAudio(
                             request_id=request_id, segment_id=segment_id, frame=frame
                         )
                     )
 
+            # flush any remaining audio
             for frame in bstream.flush():
                 self._event_ch.send_nowait(
                     tts.SynthesizedAudio(
