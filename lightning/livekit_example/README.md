@@ -57,6 +57,7 @@ SMALLEST_API_KEY=...
 To set up the livekit plugin for [smallest.ai](https://smallest.ai)
 
 ```bash
+chmod +x install_plugin.sh
 ./install_plugin.sh
 ```
 
