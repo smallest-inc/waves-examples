@@ -16,9 +16,14 @@ from audio import AudioBuffer
 import websockets
 from pydub import AudioSegment
 import io
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-xml_path = r"waves-core\examples\phonetic_calling\templates"
+xml_path = "lightning/telephone_example/templates" ## Add your path here
+PLIVO_NGROK_URL = "https://your_ngrok_url.ngrok.io" ## Add your ngrok URL here
 
 DEFAULT_TEMPLATE_ENVIRONMENT = Environment(
     loader=FileSystemLoader(xml_path)
@@ -28,19 +33,27 @@ app = FastAPI()
 
 timeout = 1  # Timeout in seconds for receiving a message
 
-url = 'wss://smallest-ai.meeshogcp.in/get_streaming_speech?token=<your-token-here>'
+TOKEN = os.environ.get("SMALLEST_API_KEY")
+EXTRA_HEADERS = {"origin": "https://smallest.ai"}
+url = f"wss://waves-api.smallest.ai/api/v1/lightning/get_streaming_speech?token={TOKEN}"
 
 # Payloads for streaming API
 payloads = [
-    {'text': 'Aap apne order ko cancel kar sakte hain.', 'voice_id': 'aravind', 'language': 'hi', 'speed': 1.1, 'remove_extra_silence': True, 'sample_rate': 8000, 'add_wav_header': False, 'keep_ws_open': True, 'transliterate': True, 'get_end_of_response_token': False},
-    {'text': 'Lekin aapka order cash on delivery hai,', 'voice_id': 'aravind', 'language': 'hi', 'speed': 1.1, 'remove_extra_silence': True, 'sample_rate': 8000, 'add_wav_header': False, 'keep_ws_open': True, 'transliterate': True, 'get_end_of_response_token': False},
-    {'text': 'Agar aapka order prepaid hota,', 'voice_id': 'aravind', 'language': 'hi', 'speed': 1.1, 'remove_extra_silence': True, 'sample_rate': 8000, 'add_wav_header': False, 'keep_ws_open': True, 'transliterate': True, 'get_end_of_response_token': False},
-    {'text': 'to aapko refund milta. Aur aapka order cash on delivery hai,', 'voice_id': 'aravind', 'language': 'hi', 'speed': 1.1, 'remove_extra_silence': True, 'sample_rate': 8000, 'add_wav_header': False, 'keep_ws_open': True, 'transliterate': True, 'get_end_of_response_token': False},
-    {'text': 'toh ismein koi paise nahi lagenge.', 'voice_id': 'aravind', 'language': 'hi', 'speed': 1.1, 'remove_extra_silence': True, 'sample_rate': 8000, 'add_wav_header': False, 'keep_ws_open': True, 'transliterate': True, 'get_end_of_response_token': False},
-    {'text': ' ', 'voice_id': 'aravind', 'language': 'hi', 'speed': 1.1, 'remove_extra_silence': True, 'sample_rate': 8000, 'add_wav_header': False, 'keep_ws_open': True, 'transliterate': True, 'get_end_of_response_token': True}
+    {
+        'text': 'smallest एआई में आपका स्वागत है। आज मैं आपकी कैसे सहायता कर सकता हूँ?', 
+        'voice_id': 'raj', 
+        'add_wav_header': False, 
+        'language': 'hi', 
+        'sample_rate': 8000, 
+        'speed': 1.0, 
+        'keep_ws_open': True, 
+        'remove_extra_silence': False,
+        'transliterate': True,
+        'get_end_of_response_token': True
+    },
 ]
 
-def encode_audio_common_wav(frame_input, sample_rate=16000, sample_width=2, channels=1):
+def encode_audio_common_wav(frame_input, sample_rate=8000, sample_width=2, channels=1):
     """Ensure the WAV file is encoded with standard settings"""
     audio = AudioSegment(
         data=frame_input,
@@ -55,17 +68,15 @@ def encode_audio_common_wav(frame_input, sample_rate=16000, sample_width=2, chan
     return wav_buf.read()
 
 
-async def awaaz_streaming(url, payload):
+async def waves_streaming(url, payload):
     """
         url: URL to streaming smallest.ai Api
         payload: Payload for the Api
     """
     wav_audio_bytes = b''
-    print(f"start_time: {datetime.now(timezone.utc)}")
-    start_time = time.time()
     
     try:
-        async with websockets.connect(url) as websocket:
+        async with websockets.connect(url, extra_headers=EXTRA_HEADERS) as websocket:
             print(f"connected_time: {datetime.now(timezone.utc)}")
             data = json.dumps(payload)
             await websocket.send(data)
@@ -81,10 +92,6 @@ async def awaaz_streaming(url, payload):
                 except asyncio.TimeoutError:
                     print("Timeout while waiting for response")
                     break
-
-            # print(f"Time elapsed since connection is open: {time.time() - start_time}")
-            # print(f"Assume now that the other processes run - user speaks and llm responds")
-            # # await asyncio.sleep(5)
             
     except websockets.exceptions.ConnectionClosed as e:
         if e.code == 1000:
@@ -96,6 +103,7 @@ async def awaaz_streaming(url, payload):
         traceback.print_exc()
     finally:
         print("Connection closed")
+
 
 def render_template(template_name: str, template_environment: Environment, **kwargs):
     template = template_environment.get_template(template_name)
@@ -128,7 +136,7 @@ async def webhook(request: Request):
     # Extract the CallUUID
     call_uuid = parsed_data.get('CallUUID', [None])[0]    
     
-    return get_connection_plivoxml(call_uuid, "1b23-2406-7400-56-6aea-8cd4-8424-a054-4458.ngrok-free.app")
+    return get_connection_plivoxml(call_uuid, PLIVO_NGROK_URL.split("://")[1])
 
 # WebSocket endpoint
 @app.websocket("/connect_call")
@@ -139,7 +147,6 @@ async def websocket_endpoint(ws: WebSocket):
         # For each payload
         for idx, payload in enumerate(payloads):
             data = await ws.receive_text()
-            print(data)
             data = json.loads(data)
             if data['event'] == 'start':
                 stream_id = data['start']['streamId']
@@ -150,10 +157,10 @@ async def websocket_endpoint(ws: WebSocket):
             tmp_audio_buffer = AudioBuffer(b'')
             response = b''
             # send the chunks to socket on each chunk from the API
-            async for audio_chunk in awaaz_streaming(url, payload):
+            async for audio_chunk in waves_streaming(url, payload):
                 if audio_chunk:
                     tmp_audio_buffer.extend(AudioBuffer(audio_chunk))
-                    print("Len of Audio Chunk is: ", len(audio_chunk))
+
                     while len(tmp_audio_buffer) > 0:
                         current_time = datetime.now()
 
@@ -163,12 +170,8 @@ async def websocket_endpoint(ws: WebSocket):
                                 x = tmp_audio_buffer.pop_chunk()
                                 response += x
 
-                                print("Length of Chunk x is: ", len(x))
-                                print("length of total audio is: ", len(tmp_audio_buffer))
-                                # print("x is: ", x)
                                 if not x or len(x) != 640:
                                     if x:
-                                        print(f"sending weird: {len(x)}")
                                         ai_speaking_count += 1
                                 else:
                                     payload = base64.b64encode(x).decode("utf-8")
@@ -190,11 +193,8 @@ async def websocket_endpoint(ws: WebSocket):
                                         "streamId": stream_id,
                                         "name": "random"
                                     }
-                                    print("mark sent")
                                     await ws.send_text(json.dumps(mark_message))
 
-                                    # await ws.send_bytes(x)
-                                    print("X is sent")
                                 prev_time = current_time
                         else:
                             print("Chunk Completed")

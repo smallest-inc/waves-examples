@@ -9,6 +9,10 @@ from audio import AudioBuffer
 import websockets
 from pydub import AudioSegment
 import io
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -16,12 +20,24 @@ timeout = 1  # Timeout in seconds for receiving a message
 CLOSE_CONNECTION_TIMEOUT = 500  # Timeout for a single connection set at 600 seconds.
 
 # Add your token here
-url = "wss://call-dev.smallest.ai/invocations_streaming?token=<your-token-here>"
+TOKEN = os.environ.get("SMALLEST_API_KEY")
+EXTRA_HEADERS = {"origin": "https://smallest.ai"}
+url = f"wss://waves-api.smallest.ai/api/v1/lightning/get_streaming_speech?token={TOKEN}"
 
 # Payloads for streaming API
 payloads = [
-    {'text': 'smallest एआई में आपका स्वागत है। आज मैं आपकी कैसे सहायता कर सकता हूँ?', 'voice_id': 'amar_indian_male', 'add_wav_header': False, 'language': 'hi', 'sample_rate': 16000, 'speed': 1.1, 'keep_ws_open': True, 'remove_extra_silence': False},
-    # Add Payload here...
+    {
+        'text': 'smallest एआई में आपका स्वागत है। आज मैं आपकी कैसे सहायता कर सकता हूँ?', 
+        'voice_id': 'raj', 
+        'add_wav_header': False, 
+        'language': 'hi', 
+        'sample_rate': 16000, 
+        'speed': 1.0, 
+        'keep_ws_open': True, 
+        'remove_extra_silence': False,
+        'transliterate': True,
+        'get_end_of_response_token': True
+    },
 ]
 
 def encode_audio_common_wav(frame_input, sample_rate=16000, sample_width=2, channels=1):
@@ -39,17 +55,15 @@ def encode_audio_common_wav(frame_input, sample_rate=16000, sample_width=2, chan
     return wav_buf.read()
 
 
-async def awaaz_streaming(url, payload):
+async def waves_streaming(url, payload):
     """
         url: URL to streaming smallest.ai Api
         payload: Payload for the Api
     """
     wav_audio_bytes = b''
-    print(f"start_time: {datetime.now(timezone.utc)}")
-    start_time = time.time()
     
     try:
-        async with websockets.connect(url) as websocket:
+        async with websockets.connect(url, extra_headers=EXTRA_HEADERS) as websocket:
             print(f"connected_time: {datetime.now(timezone.utc)}")
             data = json.dumps(payload)
             await websocket.send(data)
@@ -66,9 +80,6 @@ async def awaaz_streaming(url, payload):
                     print("Timeout while waiting for response")
                     break
 
-            print(f"Time elapsed since connection is open: {time.time() - start_time}")
-            print(f"Assume now that the other processes run - user speaks and llm responds")
-            # await asyncio.sleep(5)
             
     except websockets.exceptions.ConnectionClosed as e:
         if e.code == 1000:
@@ -80,6 +91,7 @@ async def awaaz_streaming(url, payload):
         traceback.print_exc()
     finally:
         print("Connection closed")
+
 
 @app.get("/webhooks/answer")
 async def answer_call(request: Request):
@@ -119,10 +131,10 @@ async def websocket_endpoint(ws:WebSocket):
             tmp_audio_buffer = AudioBuffer(b'')
             response = b''
             # send the chunks to socket on each chunk from the API
-            async for audio_chunk in awaaz_streaming(url, payload):
+            async for audio_chunk in waves_streaming(url, payload):
                 if audio_chunk:
                     tmp_audio_buffer.extend(AudioBuffer(audio_chunk))
-                    print("Len of Audio Chunk is: ", len(audio_chunk))
+
                     while len(tmp_audio_buffer) > 0:
                         current_time = datetime.now()
 
@@ -132,16 +144,11 @@ async def websocket_endpoint(ws:WebSocket):
                                 x = tmp_audio_buffer.pop_chunk()
                                 response += x
 
-                                print("Length of Chunk x is: ", len(x))
-                                print("length of total audio is: ", len(tmp_audio_buffer))
-                                # print("x is: ", x)
                                 if not x or len(x) != 640:
                                     if x:
-                                        print(f"sending weird: {len(x)}")
                                         ai_speaking_count += 1
                                 else:
                                     await ws.send_bytes(x)
-                                    print("X is sent")
                                 prev_time = current_time
                         else:
                             print("Chunk Completed")

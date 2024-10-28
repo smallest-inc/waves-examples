@@ -11,40 +11,51 @@ Ensure you have the following installed:
 
 ## General Steps
 
-1. **Set up ngrok:**
+1. **Config:**
+  - Create `.env` file with keys you want to run experiment of:
+    ```bash
+    SMALLEST_API_KEY=...
+    PLIVO_AUTH_ID=...
+    PLIVO_AUTH_TOKEN=...
+    VONAGE_APPLICATION_ID=...
+    ```
+  - Add vonage to secrets to `secrets/private.key`
+
+2. **Set up ngrok:**
    - Install `ngrok`, then run the command to expose your FastAPI server:
      ```bash
      ngrok http 8000  # For Vonage
      ngrok http 5000  # For Plivo
      ```
 
-2. **Install the required dependencies:**
+3. **Get the ngrok public URL:**
+   - In the ngrok terminal, a public URL will be displayed, e.g., `https://abcd-1234-5678.ngrok.io`.
+
+
+4. **Install the required dependencies:**
    - Run the following command to install the necessary Python packages:
      ```bash
      pip install -r requirements.txt
      ```
 
-3. **Run the FastAPI application:**
-   - For Vonage:
+5. **Run the FastAPI application:**
+   - For Vonage: 
      ```bash
-     python app.py
+     python vonage_example/vonage_app.py
      ```
-   - For Plivo (add the required token in the script):
+   - For Plivo: **(Update the ngrok URL and path in the script first!)**
      ```bash
-     python plivo_app.py
+     python plivo_example/plivo_app.py
      ```
 
-4. **Get the ngrok public URL:**
-   - In the ngrok terminal, a public URL will be displayed, e.g., `https://abcd-1234-5678.ngrok.io`.
-
-5. **Run the phonetic call client:**
+6. **Run the phonetic call client: (Update the phone numbers, ngrok URL and path in the script first!)**
    - For Vonage:
      ```bash
-     python make_call.py
+     python vonage_example/vonage_make_call.py
      ```
-   - For Plivo (make sure to update the Auth Tokens, phone numbers, and ngrok URL):
+   - For Plivo:
      ```bash
-     python plivo_make_call.py
+     python plivo_example/plivo_make_call.py
      ```
 
 ---

@@ -1,12 +1,17 @@
 import plivo
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+NGROK_PUBLIC_URL = "https://your_ngrok_url.ngrok.io" ## Add your ngrok URL here
 
 def get_ivr_client():
-    ivr_client = plivo.RestClient(auth_id="<your auth id>", auth_token="<your auth token>")
+    ivr_client = plivo.RestClient(auth_id=os.environ.get("PLIVO_AUTH_ID"), auth_token=os.environ.get("PLIVO_AUTH_TOKEN"))
     return ivr_client
 
 plivo_client = get_ivr_client()
 call_payload = {
-    "to": f"<your phone number>",  # Recipient phone number
+    "to": f"<your number here>",  # Recipient phone number
     "from": f"+912231043567"   # Caller phone number
 }
 
@@ -16,7 +21,7 @@ def make_a_call():
         call_response = plivo_client.calls.create(
             from_=call_payload['from'], 
             to_=call_payload['to'], 
-            answer_url="<ngrok url>/inbound_call",
+            answer_url=f"{NGROK_PUBLIC_URL}/inbound_call",
             answer_method="POST"
         )
         if call_response:

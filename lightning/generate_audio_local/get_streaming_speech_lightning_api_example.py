@@ -24,12 +24,13 @@ TOKEN = "TOKEN"  # Your token ID
 SAMPLE_RATE = 24000  # Sample rate of the audio that you wish to generate
 SPEED = 1.1  # Speed of the audio that you wish to generate
 MODEL = "lightning" #Choose from either one of - 1. lightning 2. thunder
-VOICE_ID = "saina"  # Voice id that you wish to use
+VOICE_ID = "mithali"  # Voice id that you wish to use
 TIMEOUT = 2  # Timeout in seconds for receiving a message
 CLOSE_CONNECTION_TIMEOUT = 500  # Timeout for your websocket connection
 SENTENCES = ["  ", "भारत एक विशाल और विविधता से भरा देश है,", "जिसमें विभिन्न भाषाएँ संस्कृतियाँ", "और परंपराएँ समाहित हैं।", " "]
 WAVES_STREAMING_URL = f"wss://waves-api.smallest.ai/api/v1/{MODEL}/get_streaming_speech?token={TOKEN}"
 EXTRA_HEADERS = {"origin": "https://smallest.ai"}
+
 ############## Do not change anything below this ######################
 
 SAMPLE_WIDTH = 2
