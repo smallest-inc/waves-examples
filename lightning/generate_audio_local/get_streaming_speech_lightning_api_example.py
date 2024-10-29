@@ -74,7 +74,7 @@ for sentence in SENTENCES:
     waves_payloads.append(payload)
 
 
-async def waves_streaming(url: str, payloads: dict):
+async def waves_streaming(url: str, payloads: list):
     """waves streaming demo function.
 
     Args:
