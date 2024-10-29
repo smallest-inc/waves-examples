@@ -79,7 +79,7 @@ async def waves_streaming(url: str, payloads: list):
 
     Args:
         url (str): URL
-        payload (dict): A dictionary representing the payload to send to the API.
+        payload (list): A dictionary representing the payload to send to the API.
 
     Returns:
         bytes: Audio bytes generated for the sentences concatenated together.
