@@ -8,7 +8,7 @@ TOKEN = "YOUR_TOKEN_HERE"
 url = "http://waves-api.smallest.ai/api/v1/lightning/get_speech"
 
 SAMPLE_RATE = 24000 ## Can be changed to 8000, 16000, 48000
-VOICE_ID = "mithali"  ## Supported Speakers: ["emily", "jasmine", "arman", "james", "mithali", "aravind", "raj"]
+VOICE_ID = "mithali"  ## List of supported voices can be found here: https://waves-docs.smallest.ai/waves-api
 
 ## Edit the payload
 payload = {

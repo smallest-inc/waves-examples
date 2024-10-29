@@ -20,14 +20,14 @@ from pydub import AudioSegment
 
 ###################### Do your changes here ###########################
 
-TOKEN = "TOKEN"  # Your token ID
+TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiaGFtZWVzQHNtYWxsZXN0LmFpIn0.v55OTV0EMB2tALid-cqiV49UzhDRg_tMKT-19PKavY0"  # Your token ID
 SAMPLE_RATE = 24000  # Sample rate of the audio that you wish to generate
-SPEED = 1.1  # Speed of the audio that you wish to generate
+SPEED = 1.0  # Speed of the audio that you wish to generate
 MODEL = "lightning" #Choose from either one of - 1. lightning 2. thunder
-VOICE_ID = "mithali"  # Voice id that you wish to use
+VOICE_ID = "mithali"  # List of supported voices can be found here: https://waves-docs.smallest.ai/waves-api
 TIMEOUT = 2  # Timeout in seconds for receiving a message
 CLOSE_CONNECTION_TIMEOUT = 500  # Timeout for your websocket connection
-SENTENCES = ["  ", "भारत एक विशाल और विविधता से भरा देश है,", "जिसमें विभिन्न भाषाएँ संस्कृतियाँ", "और परंपराएँ समाहित हैं।", " "]
+SENTENCES = ["  ", "हम highly detailed, fast-paced voice models बनाते हैं जो real-time situations में use करने के लिए designed हैं। ये models बहुत ज़्यादा realistic sound produce कर सकते हैं।"]
 WAVES_STREAMING_URL = f"wss://waves-api.smallest.ai/api/v1/{MODEL}/get_streaming_speech?token={TOKEN}"
 EXTRA_HEADERS = {"origin": "https://smallest.ai"}
 
@@ -57,12 +57,6 @@ def add_wav_header(frame_input, sample_rate=24000, sample_width=2, channels=1):
 
 waves_websocket_url = WAVES_STREAMING_URL
 waves_payloads = []
-if MODEL=='lightning':
-    remove_extra_silence=True
-elif MODEL=='thunder':
-    remove_extra_silence=False
-else:
-    raise ValueError("The model selected is not correct.")
 
 for sentence in SENTENCES:
     payload = {
@@ -73,62 +67,66 @@ for sentence in SENTENCES:
         "sample_rate": SAMPLE_RATE,
         "speed": SPEED,
         "keep_ws_open": True,
-        "remove_extra_silence": remove_extra_silence, #True if using lightning, False if using thunder
+        "remove_extra_silence": True, 
         "transliterate": True,
         "get_end_of_response_token": True
     }
     waves_payloads.append(payload)
 
 
-async def waves_streaming(url: str, payloads: list):
+async def waves_streaming(url: str, payloads: dict):
     """waves streaming demo function.
 
     Args:
         url (str): URL
-        payloads (list): List of dictionaries of payloads that are sent to API.
+        payload (dict): A dictionary representing the payload to send to the API.
 
     Returns:
         bytes: Audio bytes generated for the sentences concatenated together.
     """
-    first = False
     wav_audio_bytes = b""
     print(f"Start_time: {datetime.now(timezone.utc)}")
     start_time = time.time()
+    first = True
 
     try:
         async with websockets.connect(url, extra_headers=EXTRA_HEADERS) as websocket:
-             for payload in payloads:
-                print(f"Connected_time: {datetime.now(timezone.utc)}")
+            # Convert payload to JSON and record the time before sending
+            for payload in payloads:
                 data = json.dumps(payload)
                 await websocket.send(data)
+                payload_start_time = time.time()
 
                 # Collect responses until no more data or timeout
                 response = b""
                 while True:
-                    response_part = await asyncio.wait_for(websocket.recv(),
-                                                           timeout=TIMEOUT)
+                    response_part = await asyncio.wait_for(websocket.recv(), timeout=TIMEOUT)
+
+                    # Check for special markers in the response
                     if response_part == "<START>":
                         print("Connection started, Now you will get superfast speeds")
                         break
                     elif response_part == "<END>":
-                        print("End of response received")
-                        print(f"last response time: {datetime.now(timezone.utc)}")
+                        last_response_time = time.time()
+                        total_latency = (last_response_time - payload_start_time) * 1000  # Convert to ms
+                        print(f"Time to last byte: {int(total_latency)} ms")
                         break
                     else:
+                        # Accumulate the response parts
                         response += response_part
-                        print(f"Responses are being read: {datetime.now(timezone.utc)}")
-                        if not first:
-                            print(f"First response: {datetime.now(timezone.utc)}")
-                            first = True
+                        if first:
+                            first_response_time = time.time()
+                            latency = (first_response_time - payload_start_time) * 1000  # Convert to ms
+                            print(f"Time to first byte: {int(latency)} ms")
+                            first = False
 
-                # Handle the accumulated response if needed
-                wav_audio_bytes += response
-                time.sleep(1)
+            # Append the accumulated response to wav_audio_bytes
+            wav_audio_bytes += response
 
-                # Optionally close the connection if needed
-                if (time.time() - start_time) > CLOSE_CONNECTION_TIMEOUT:
-                    await websocket.close()
-                    break  # Exit the loop if the connection is closed
+            # Check if connection timeout has been reached
+            if (time.time() - start_time) > CLOSE_CONNECTION_TIMEOUT:
+                await websocket.close()
+                print("Connection closed due to timeout.")
 
     except websockets.exceptions.ConnectionClosed as e:
         if e.code == 1000:
