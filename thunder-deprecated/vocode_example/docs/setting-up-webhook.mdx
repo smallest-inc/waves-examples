@@ -1,0 +1,40 @@
+---
+title: "Setting up a webhook"
+---
+
+Now that we have our receptionist Agent configured, we want to set up an automation so that every time we
+receive a call, we can process the results once the call has ended.
+
+## Setting up our webhook
+
+We'll use the [Webhooks](/webhooks) feature on the Agent to configure our automations. First, let's create a
+webhook that posts to `"https://example.com"` every time a call ends.
+
+```python Python
+from vocode import AgentUpdateParams, EventType, HttpMethod, WebhookUpdateParams
+
+new_webhook = WebhookUpdateParams(
+    subscriptions=[EventType.EVENT_PHONE_CALL_ENDED],
+    url="https://example.com",
+    method=HttpMethod.POST,
+)
+```
+
+Now, we can add this to our Agent by using the `agent/update` endpoint like before:
+
+```python Python
+update_response = vocode_client.agents.update_agent(
+    id=agent_id,
+    request=AgentUpdateParams(
+        webhook=new_webhook.id
+    ),
+)
+```
+
+## Sample webhook server
+
+In order to process the result of our webhook, we can set up a simple endpoint to receive
+webhook messages from Vocode. [Webhook.site](https://webhook.site) makes it very easy to set up
+a sample endpoint.
+
+For a full list of webhook events and other capabilities, check out our guide on [Webhooks](/webhooks).
