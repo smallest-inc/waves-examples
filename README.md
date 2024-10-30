@@ -25,14 +25,14 @@
 
 
 ## Table of Contents  
-- [Overview](#overview-)
-- [Models](#models-)
-    - [Lightning](#1-lightning)
-    - [Thunder](#2-thunder)
-- [Getting Started](#getting-started-)
-- [Contributing](#contributing-)
-- [Integrations](#integrations-)
-- [Contact](#contact-%EF%B8%8F)
+- [Overview](#overview-📖)
+- [Models](#models-🦾)
+    - [Lightning](#1-lightning-⚡)
+    - [Thunder (⚠️ Deprecated)](#2-thunder-⚠️-deprecated)
+- [Getting Started](#getting-started-🚀)
+- [Contributing](#contributing-🌱)
+- [Integrations](#integrations-🧩)
+- [Contact](#contact-✉️)
 
 
 ## Overview 📖
@@ -40,12 +40,12 @@
 Waves offers cutting-edge text-to-speech technology featuring hyper-realistic voices that sound virtually indistinguishable from human speech. With incredibly low latency of just 100ms, it enables real-time applications across various domains. The system supports multiple languages and accents. This repository shows a collection of example projects, each in its own directory, demonstrating how to implement and leverage these advanced models for different use cases. Comprehensive setup instructions are provided, making it easy for developers to integrate Waves' powerful text-to-speech capabilities into their own applications.
 
 ## Models 🦾
-### 1. Lightning  
+### 1. Lightning ⚡
 Lightning is the world’s fastest text to speech model, generating around 10 seconds of hyper-realistic audio in just 100ms, all at once, no streaming.  
 
 It supports 7 Voices, learn more about it on [🌊 Docs](https://waves-docs.smallest.ai/waves-api).
 
-### 2. Thunder
+### 2. Thunder (⚠️ Deprecated)
 Thunder is streaming text to speech model with gives hyper realistic audios with time-to-first-bytes as low as 200ms.  
 
 It supports 20 Voices, learn more about it on [🌊 Docs](https://waves-docs.smallest.ai/get_streaming_speech).
