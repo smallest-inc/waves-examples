@@ -9,13 +9,12 @@
 #     - pip install websockets pydub
 ############################################################
 
-import asyncio
 import io
 import json
 import time
 from datetime import datetime, timezone
 
-import websockets
+import websocket
 from pydub import AudioSegment
 
 ###################### Do your changes here ###########################
@@ -55,7 +54,6 @@ def add_wav_header(frame_input, sample_rate=24000, sample_width=2, channels=1):
     return wav_buf.read()
 
 
-waves_websocket_url = WAVES_STREAMING_URL
 waves_payloads = []
 
 for sentence in SENTENCES:
@@ -74,7 +72,7 @@ for sentence in SENTENCES:
     waves_payloads.append(payload)
 
 
-async def waves_streaming(url: str, payloads: list):
+def waves_streaming(url: str, payloads: list):
     """waves streaming demo function.
 
     Args:
@@ -90,59 +88,52 @@ async def waves_streaming(url: str, payloads: list):
     first = True
 
     try:
-        async with websockets.connect(url, extra_headers=EXTRA_HEADERS) as websocket:
-            # Convert payload to JSON and record the time before sending
-            for payload in payloads:
-                data = json.dumps(payload)
-                await websocket.send(data)
-                payload_start_time = time.time()
+        ws = websocket.create_connection(url, header=[f"{k}: {v}" for k, v in EXTRA_HEADERS.items()])
 
-                # Collect responses until no more data or timeout
-                response = b""
-                while True:
-                    response_part = await asyncio.wait_for(websocket.recv(), timeout=TIMEOUT)
+        for payload in payloads:
+            data = json.dumps(payload)
+            ws.send(data)
+            payload_start_time = time.time()
 
-                    # Check for special markers in the response
-                    if response_part == "<START>":
-                        print("Connection started, Now you will get superfast speeds")
-                        break
-                    elif response_part == "<END>":
-                        last_response_time = time.time()
-                        total_latency = (last_response_time - payload_start_time) * 1000  # Convert to ms
-                        print(f"Time to last byte: {int(total_latency)} ms")
-                        break
-                    else:
-                        # Accumulate the response parts
-                        response += response_part
-                        if first:
-                            first_response_time = time.time()
-                            latency = (first_response_time - payload_start_time) * 1000  # Convert to ms
-                            print(f"Time to first byte: {int(latency)} ms")
-                            first = False
+            response = b""
+            while True:
+                response_part = ws.recv()
+                if response_part == "<START>":
+                    print("Connection started, Now you will get superfast speeds")
+                    break
+                elif response_part == "<END>":
+                    last_response_time = time.time()
+                    total_latency = (last_response_time - payload_start_time) * 1000  # Convert to ms
+                    print(f"Time to last byte: {int(total_latency)} ms")
+                    break
+                else:
+                    response += response_part
+                    if first:
+                        first_response_time = time.time()
+                        latency = (first_response_time - payload_start_time) * 1000  # Convert to ms
+                        print(f"Time to first byte: {int(latency)} ms")
+                        first = False
 
-            # Append the accumulated response to wav_audio_bytes
             wav_audio_bytes += response
 
-            # Check if connection timeout has been reached
             if (time.time() - start_time) > CLOSE_CONNECTION_TIMEOUT:
-                await websocket.close()
+                ws.close()
                 print("Connection closed due to timeout.")
+                return wav_audio_bytes
 
-    except websockets.exceptions.ConnectionClosed as e:
-        if e.code == 1000:
-            print("Connection closed normally (code 1000).")
-        else:
-            print(f"Connection closed with code {e.code}: {e.reason}")
+        ws.close()
+
+    except websocket.WebSocketConnectionClosedException as e:
+        print(f"Connection closed: {e}")
         return None
     except Exception as e:
         print(f"Exception occurred: {e}")
 
-    finally:
-        print(f"Connection closed: {datetime.now(timezone.utc)}")
-        return wav_audio_bytes
+    print(f"Connection closed: {datetime.now(timezone.utc)}")
+    return wav_audio_bytes
 
 
-async def post_process(audio_data):
+def post_process(audio_data):
     """Post-process the provided audio data by ensuring the total length of the WAV audio bytes
     aligns with the required sample width and number of channels.
 
@@ -159,23 +150,21 @@ async def post_process(audio_data):
     return audio_data
 
 
-# Example usage with async event loop
-async def main():
+def main():
     """Main function to generate, post-process, and save audio data as a WAV file."""
     # Generate audio data
-    wav_audio_bytes = await waves_streaming(waves_websocket_url, waves_payloads)
+    wav_audio_bytes = waves_streaming(WAVES_STREAMING_URL, waves_payloads)
     if wav_audio_bytes is None:
-        print("Some error occured, Did you check your token?")
+        print("Some error occurred. Did you check your token?")
     else:
-        ################ Optional Post processing for saving the file ###################
-        wav_audio_bytes = await post_process(wav_audio_bytes)
-        #################################################################################
+        # Optional post processing for saving the file
+        wav_audio_bytes = post_process(wav_audio_bytes)
     
-        # Use audio_data as needed
         print(f"Saving audio file: {datetime.now(timezone.utc)}")
         wav_audio_bytes = add_wav_header(wav_audio_bytes, sample_rate=SAMPLE_RATE)
         with open("waves_demo.wav", "wb") as f:
             f.write(wav_audio_bytes)
 
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
