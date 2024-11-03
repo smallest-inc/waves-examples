@@ -16,7 +16,7 @@ payload = {
     "voice_id": VOICE_ID,
     "sample_rate": SAMPLE_RATE,
     "speed": 1.0,
-    "language": "en",
+    "language": "hi",
     "add_wav_header": True,
     "transliterate": False,
     "remove_extra_silence": False
@@ -37,11 +37,8 @@ if response.status_code == 200:
     print(f"Saving the audio!! {response.status_code} Latency: {(datetime.now() - start_time).total_seconds()}")
 
     # Save the audio in bytes to a .wav file
-    with wave.open('waves_lightning_sample_audio.wav', 'wb') as wav_file:
-        wav_file.setnchannels(1)
-        wav_file.setsampwidth(2)
-        wav_file.setframerate(SAMPLE_RATE)
-        wav_file.writeframes(response.content)
+    with open('waves_lightning_sample_audio_hi.wav', 'wb') as wav_file:
+        wav_file.write(response.content)
 
     print("Audio file saved as waves_lightning_sample_audio.wav")
 else:

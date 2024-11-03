@@ -2,11 +2,11 @@
 # 1. conda setup
 #     - conda create -n waves_venv python=3.10 -y
 #     - conda activate waves_venv
-#     - pip install websockets pydub
+#     - pip install websocket-client pydub
     
 # 2. pipenv setup
 #     - python -m venv waves_venv
-#     - pip install websockets pydub
+#     - pip install websocket-client pydub
 ############################################################
 
 import io
