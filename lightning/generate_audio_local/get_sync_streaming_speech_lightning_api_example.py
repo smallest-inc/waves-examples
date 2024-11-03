@@ -162,7 +162,7 @@ def main():
     
         print(f"Saving audio file: {datetime.now(timezone.utc)}")
         wav_audio_bytes = add_wav_header(wav_audio_bytes, sample_rate=SAMPLE_RATE)
-        with open("waves_demo.wav", "wb") as f:
+        with open("waves_demo_sync_streaming.wav", "wb") as f:
             f.write(wav_audio_bytes)
 
 
