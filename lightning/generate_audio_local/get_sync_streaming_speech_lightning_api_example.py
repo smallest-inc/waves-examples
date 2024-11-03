@@ -2,11 +2,11 @@
 # 1. conda setup
 #     - conda create -n waves_venv python=3.10 -y
 #     - conda activate waves_venv
-#     - pip install websockets pydub
+#     - pip install websocket-client pydub
     
 # 2. pipenv setup
 #     - python -m venv waves_venv
-#     - pip install websockets pydub
+#     - pip install websocket-client pydub
 ############################################################
 
 import io
@@ -162,7 +162,7 @@ def main():
     
         print(f"Saving audio file: {datetime.now(timezone.utc)}")
         wav_audio_bytes = add_wav_header(wav_audio_bytes, sample_rate=SAMPLE_RATE)
-        with open("waves_demo.wav", "wb") as f:
+        with open("waves_demo_sync_streaming.wav", "wb") as f:
             f.write(wav_audio_bytes)
 
 
