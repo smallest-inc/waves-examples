@@ -29,7 +29,7 @@ SPEED = 1.0  # Speed of the audio that you wish to generate
 MODEL = "lightning" #Choose from either one of - 1. lightning 2. thunder
 TIMEOUT = 2  # Timeout in seconds for receiving a message
 CLOSE_CONNECTION_TIMEOUT = 500  # Timeout for your websocket connection
-URL = "http://waves-api.smallest.ai/api/v1/lightning/get_speech"
+URL = "https://waves-api.smallest.ai/api/v1/lightning/get_speech"
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
     "Content-Type": "application/json"
