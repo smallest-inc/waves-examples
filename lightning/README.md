@@ -10,6 +10,9 @@ Documentation for Waves: https://waves-docs.smallest.ai/introduction
 
 - generate_audio_local/get_speech_lightning_english_api_example.py: Example script to call lightning API for hindi language and save file to local
 
+- generate_audio_local/long_audios_using_http.py: Example script to call lightning API for longer audios using http protocol and save file to local
+
+
 - vocode_example: examples on how to integrate the lightning api with vocode
 
 Parameters:
