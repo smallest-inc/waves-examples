@@ -14,7 +14,7 @@ Documentation for Waves: https://waves-docs.smallest.ai/introduction
 
 ```
 cd generate_audio_local
-python long_audios_using_http.py input_data.json
+python long_audios_using_http.py <json_path>
 ```
 
 - vocode_example: examples on how to integrate the lightning api with vocode
