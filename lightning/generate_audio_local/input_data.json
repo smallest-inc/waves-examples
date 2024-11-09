@@ -1,0 +1,4 @@
+{
+    "sentence": "Machine learning (ML) is a subset of artificial intelligence (AI) focused on the development of algorithms that allow computers to learn from and make decisions based on data. Unlike traditional programming, where rules and instructions are explicitly defined, machine learning models learn patterns, make predictions, or classify data without human intervention. This process begins with data — whether images, text, or numbers — which is used to train the model. The model adjusts its internal parameters to minimize errors and improve its ability to generalize to new, unseen data.",
+    "voice_id": "emily"
+}

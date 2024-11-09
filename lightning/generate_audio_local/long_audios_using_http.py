@@ -1,32 +1,17 @@
-################## Environment setup #######################
-# 1. conda setup
-#     - conda create -n waves_venv python=3.10 -y
-#     - conda activate waves_venv
-#     - pip install websockets pydub
-    
-# 2. pipenv setup
-#     - python -m venv waves_venv
-#     - pip install websockets pydub
-############################################################
-
-
-# import asyncio
 import io
 import json
 import time
+import argparse
 from datetime import datetime, timezone
 import requests
-import io
-
-# import websockets
 from pydub import AudioSegment
+import re
 
-###################### Do your changes here ###########################
-
-TOKEN = "YOUR_TOKEN_HERE"  # Your token ID
+# Configuration constants
+TOKEN = ""  # Replace with your token ID
 SAMPLE_RATE = 24000  # Sample rate of the audio that you wish to generate
 SPEED = 1.0  # Speed of the audio that you wish to generate
-MODEL = "lightning" #Choose from either one of - 1. lightning 2. thunder
+MODEL = "lightning"  # Choose from either one of - 1. lightning 2. thunder
 TIMEOUT = 2  # Timeout in seconds for receiving a message
 CLOSE_CONNECTION_TIMEOUT = 500  # Timeout for your websocket connection
 URL = "https://waves-api.smallest.ai/api/v1/lightning/get_speech"
@@ -34,13 +19,6 @@ HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
     "Content-Type": "application/json"
 }
-
-INPUTS = [
-    ("We at smallest build ultra-realistic, high speed voice models tailored for realtime applications.", "emily"),
-    ("हम highly detailed, fast-paced voice models बनाते हैं जो real-time situations में use करने के लिए designed हैं।", "mithali")
-]
-
-############## Do not change anything below this ######################
 
 SAMPLE_WIDTH = 2
 CHANNELS = 1
@@ -60,11 +38,11 @@ def fetch_audio(sentence, voice_id):
         "voice_id": voice_id,
         "sample_rate": SAMPLE_RATE,
         "speed": SPEED,
-        "transliterate":False
+        "transliterate": False
     }
     
     start_time = time.time()
-    response = requests.request("POST", URL, json=payload, headers=HEADERS)
+    response = requests.post(URL, json=payload, headers=HEADERS)
     
     if response.status_code == 200:
         latency = (time.time() - start_time) * 1000  # Convert to ms
@@ -79,7 +57,7 @@ def concatenate_audio(sentences_voices):
     """Concatenate audio data for all sentences and voices.
 
     Args:
-        sentences_voices (dict): Dictionary mapping sentences to voice IDs.
+        sentences_voices (list): List of tuples containing sentence and voice ID.
 
     Returns:
         bytes: Concatenated audio bytes.
@@ -126,9 +104,65 @@ def add_wav_header(frame_input, sample_rate=24000, sample_width=2, channels=1):
     wav_buf.seek(0)
     return wav_buf.read()
 
+def split_paragraph_into_sentences(paragraph, min_length=10):
+    # Regular expression to match sentences (ending with .!?)
+    sentence_endings = r'(?<=[.!?]) +'
+    sentences = re.split(sentence_endings, paragraph.strip())
+    
+    # Join short sentences with the next one until they reach the minimum length
+    result = []
+    current_sentence = ""
+    
+    for sentence in sentences:
+        if len(current_sentence) + len(sentence) < min_length:
+            current_sentence += " " + sentence
+        else:
+            if current_sentence:
+                result.append(current_sentence.strip())
+            current_sentence = sentence
+    
+    # Add the last sentence
+    if current_sentence:
+        result.append(current_sentence.strip())
+    
+    return result
+
+
+def load_input_data(json_file):
+    """Load the input data (sentences and voice IDs) from a JSON file.
+
+    Args:
+        json_file (str): Path to the JSON file containing sentences and voice IDs.
+
+    Returns:
+        list: List of tuples containing sentence and voice ID.
+    """
+    with open(json_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    sentence = data['sentence']
+    voice_id = data['voice_id']
+
+    split_sentences = split_paragraph_into_sentences(sentence)
+    sentences_voices = [(sen, data['voice_id']) for sen in split_sentences]
+    return sentences_voices
 
 def main():
-    concatenated_audio_data = concatenate_audio(INPUTS)
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Generate and save speech from text.")
+    parser.add_argument(
+        "json_file", 
+        nargs="?",  # Makes the argument optional
+        default="input_data.json",  # Default to input_data.json if no argument is provided
+        help="Path to the JSON file containing sentences and voice IDs (default: input_data.json)."
+    )
+    args = parser.parse_args()
+
+    # Load input data from JSON file
+    sentences_voices = load_input_data(args.json_file)
+    
+    # Concatenate audio and save the file
+    concatenated_audio_data = concatenate_audio(sentences_voices)
     if concatenated_audio_data:
         save_audio_file(concatenated_audio_data)
     else:
