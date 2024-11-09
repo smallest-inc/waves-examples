@@ -8,7 +8,7 @@ from pydub import AudioSegment
 import re
 
 # Configuration constants
-TOKEN = ""  # Replace with your token ID
+TOKEN = "your_token_here"  # Replace with your token ID
 SAMPLE_RATE = 24000  # Sample rate of the audio that you wish to generate
 SPEED = 1.0  # Speed of the audio that you wish to generate
 MODEL = "lightning"  # Choose from either one of - 1. lightning 2. thunder
@@ -140,12 +140,19 @@ def load_input_data(json_file):
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
-    sentence = data['sentence']
-    voice_id = data['voice_id']
+    all_sentences = []
 
-    split_sentences = split_paragraph_into_sentences(sentence)
-    sentences_voices = [(sen, data['voice_id']) for sen in split_sentences]
-    return sentences_voices
+    for ele in data:
+        sentence = ele['sentence']
+        voice_id = ele['voice_id']
+
+        split_sentences = split_paragraph_into_sentences(sentence)
+        
+        sentences_voices = [(sen, voice_id) for sen in split_sentences]
+    
+        all_sentences.extend(sentences_voices)
+    print(all_sentences)
+    return all_sentences
 
 def main():
     # Parse command-line arguments
