@@ -74,5 +74,5 @@ Our TTS models are being integrated into various platforms and tools. Keep an ey
 ## Contact ✉️
 For questions, issues, or support:
 
-- Email: info@smallest.ai   
+- Email: support@smallest.ai   
 - Join our community: [Discord](https://discord.gg/Ub25S48hSf)
