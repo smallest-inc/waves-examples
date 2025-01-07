@@ -1,0 +1,7 @@
+# API Keys (alternatively set via environment variables)
+smallest_key: null  # Set your Smallest.ai API key here or use SMALLEST_API_KEY env var
+eleven_key: null   # Set your ElevenLabs API key here or use ELEVEN_API_KEY env var
+
+# Audio Generation Settings
+max_retries: 3  # Maximum number of retries for failed generations
+timeout: 30  # Timeout in seconds for API calls

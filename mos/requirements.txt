@@ -1,0 +1,10 @@
+smallest-ai==1.3.4
+elevenlabs==1.50.3
+pandas==2.2.3
+numpy==2.0.2
+tqdm
+PyYAML==6.0.2
+torch>=2.4.1
+pathlib==1.0.1
+pydub==0.25.1
+soundfile==0.12.1
