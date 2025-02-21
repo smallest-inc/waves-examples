@@ -24,7 +24,7 @@ CLOSE_CONNECTION_TIMEOUT = 500  # Maximum connection duration in seconds
 # Fetch API key from environment variables
 TOKEN = os.environ.get("SMALLEST_API_KEY")
 EXTRA_HEADERS = {"origin": "https://smallest.ai"}
-url = "http://waves-api.smallest.ai/api/v1/lightning-large/get_speech"
+url = "http://waves-api.smallest.ai/api/v1/lightning/get_speech"
 
 print(url)  # Print API endpoint for debugging
 
@@ -32,7 +32,7 @@ print(url)  # Print API endpoint for debugging
 payloads = [
     {
         'text': 'smallest एआई में आपका स्वागत है। आज मैं आपकी कैसे सहायता कर सकता हूँ?', 
-        'voice_id': 'blofeld', 
+        'voice_id': 'pragya', 
         'add_wav_header': False, 
         'sample_rate': 16000, 
         'speed': 1.0, 
