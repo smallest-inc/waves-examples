@@ -1,29 +1,28 @@
-from fastapi import FastAPI, WebSocket, Request, Response
-from fastapi.templating import Jinja2Templates
-import json
-import base64
 import asyncio
-import traceback
-import io
-import os
-from dotenv import load_dotenv
-from jinja2 import Environment, FileSystemLoader
-import urllib.parse
 import audioop
+import base64
+import io
+import json
+import os
+import time
+import traceback
+import urllib.parse
+
 import aiohttp
-from fastapi import WebSocket, WebSocketDisconnect
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi.templating import Jinja2Templates
+from jinja2 import Environment, FileSystemLoader
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Configuration for Jinja2 template rendering
-xml_path = "templates"
-DEFAULT_TEMPLATE_ENVIRONMENT = Environment(
-    loader=FileSystemLoader(xml_path)
-)
+xml_path = "../templates"
+DEFAULT_TEMPLATE_ENVIRONMENT = Environment(loader=FileSystemLoader(xml_path))
 
 # Ngrok URL for public exposure of local server
-NGROK_URL = "https://4410-35-240-215-206.ngrok-free.app"  # Update with your ngrok URL
+NGROK_URL = os.environ.get("NGROK_URL")  # Update with your ngrok URL
 
 # Initialize FastAPI application and template rendering
 app = FastAPI()
@@ -33,22 +32,16 @@ templates = Jinja2Templates(directory=xml_path)
 TOKEN = os.environ.get("SMALLEST_API_KEY")  # Fetch API key from environment variables
 url = f"http://waves-api.smallest.ai/api/v1/lightning/get_speech"  # TTS API endpoint
 
+# Example payload for speech synthesis
+with open("script.json", "r") as script_file:
+    script_data = json.load(script_file)
+
 # Predefined TTS payload
-payloads = [
-    {
-        'text': 'smallest एआई में आपका स्वागत है। आज मैं आपकी कैसे सहायता कर सकता हूँ?', 
-        'voice_id': 'pragya', 
-        'add_wav_header': False, 
-        'sample_rate': 8000, 
-        'speed': 1.0,
-    }
-]
+payloads = [segment for segment in script_data["episode"]]
 
 # Headers for API requests
-headers = {
-    "Authorization": f"Bearer {TOKEN}",
-    "Content-Type": "application/json"
-}
+headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
+
 
 async def waves_streaming(content: bytes, chunk_size: int = 640):
     """Streams audio content in chunks."""
@@ -64,10 +57,12 @@ async def waves_streaming(content: bytes, chunk_size: int = 640):
         traceback.print_exc()
         raise
 
+
 def render_template(template_name: str, template_environment: Environment, **kwargs):
     """Renders XML templates using Jinja2."""
     template = template_environment.get_template(template_name)
     return template.render(**kwargs)
+
 
 def get_connection_twilioxml(
     base_url: str,
@@ -85,16 +80,17 @@ def get_connection_twilioxml(
         media_type="application/xml",
     )
 
+
 @app.post("/twiml")
 async def twiml_endpoint(request: Request):
     """Handles incoming requests from Twilio and returns TwiML response."""
     try:
         body = await request.body()
-        decoded_data = body.decode('utf-8')
+        decoded_data = body.decode("utf-8")
         parsed_data = urllib.parse.parse_qs(decoded_data)
-        
+
         # Extract CallSid from parsed request data
-        call_sid = parsed_data.get('CallSid', [''])[0]
+        call_sid = parsed_data.get("CallSid", [""])[0]
         print(f"CallSid: {call_sid}")
 
         # Extract base URL from ngrok URL
@@ -105,15 +101,16 @@ async def twiml_endpoint(request: Request):
         traceback.print_exc()
         return Response(
             '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
-            media_type="application/xml"
+            media_type="application/xml",
         )
+
 
 @app.websocket("/stream/{call_sid}")
 async def websocket_endpoint(ws: WebSocket, call_sid: str):
     """Handles WebSocket connection for streaming audio."""
     await ws.accept()
-    print(f"Twilio WebSocket connection accepted for call {call_sid}")    
-    
+    print(f"Twilio WebSocket connection accepted for call {call_sid}")
+
     connection_active = True  # Track connection state
 
     try:
@@ -129,64 +126,79 @@ async def websocket_endpoint(ws: WebSocket, call_sid: str):
                 print(f"Error receiving WebSocket data: {e}")
                 connection_active = False
                 break
-            
-            if event_data['event'] == 'start':
+
+            if event_data["event"] == "start":
                 print(f"Streaming started for call {call_sid}")
                 continue
-                
-            stream_id = event_data.get('streamSid')
+
+            stream_id = event_data.get("streamSid")
             if not stream_id:
                 continue
-                
+
             for payload in payloads:
                 if not connection_active:
                     break
-                    
+
                 try:
                     async with aiohttp.ClientSession() as session:
-                        async with session.post(url, json=payload, headers=headers) as response:
+                        async with session.post(
+                            url, json=payload, headers=headers
+                        ) as response:
+                            print(payload)
                             if response.status != 200:
-                                print(f"Error occurred with status code {response.status}")
+                                print(
+                                    f"Error occurred with status code {response.status}"
+                                )
                                 continue
-                                
+
                             tts_audio = await response.read()
                             if isinstance(tts_audio, bytes):
-                                tts_audio = audioop.lin2ulaw(tts_audio, 2)  # Convert audio format
-                                
+                                tts_audio = audioop.lin2ulaw(
+                                    tts_audio, 2
+                                )  # Convert audio format
+
                             async for chunk in waves_streaming(tts_audio):
                                 if not connection_active:
                                     break
-                                    
+
                                 if not chunk:
                                     continue
-                                    
+
                                 try:
-                                    payload = base64.b64encode(chunk).decode("utf-8")  # Encode audio chunk
-                                    await ws.send_text(json.dumps({
-                                        "event": "media",
-                                        "streamSid": stream_id,
-                                        "media": {
-                                            "payload": payload
-                                        }
-                                    }))
-                                    
-                                    await asyncio.sleep(0.03)  # Small delay to simulate real-time streaming
+                                    payload = base64.b64encode(chunk).decode(
+                                        "utf-8"
+                                    )  # Encode audio chunk
+                                    await ws.send_text(
+                                        json.dumps(
+                                            {
+                                                "event": "media",
+                                                "streamSid": stream_id,
+                                                "media": {"payload": payload},
+                                            }
+                                        )
+                                    )
+
+                                    await asyncio.sleep(
+                                        0.03
+                                    )  # Small delay to simulate real-time streaming
                                 except WebSocketDisconnect:
-                                    print(f"WebSocket disconnected during streaming for call {call_sid}")
+                                    print(
+                                        f"WebSocket disconnected during streaming for call {call_sid}"
+                                    )
                                     connection_active = False
                                     break
                                 except Exception as e:
                                     print(f"Error sending WebSocket data: {e}")
                                     connection_active = False
                                     break
-                            
+
                     if connection_active:
                         print("Chunk completed")
-                
+                    time.sleep(5)
                 except Exception as e:
                     print(f"Error in HTTP request: {e}")
                     continue
-            break    
+            break
     except WebSocketDisconnect:
         print(f"WebSocket disconnected for call {call_sid}")
     except Exception as e:
@@ -197,7 +209,9 @@ async def websocket_endpoint(ws: WebSocket, call_sid: str):
             await ws.close()
         print(f"WebSocket connection closed for call {call_sid}")
 
+
 if __name__ == "__main__":
     import uvicorn
+
     # Run FastAPI server
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT")))

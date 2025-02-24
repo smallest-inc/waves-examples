@@ -11,55 +11,46 @@ Ensure you have the following installed:
 
 ## General Steps
 
-1. **Config:**
-  - Create `.env` file with keys you want to run experiment of:
-    ```bash
-    SMALLEST_API_KEY=...
-    PLIVO_AUTH_ID=...
-    PLIVO_AUTH_TOKEN=...
-    VONAGE_APPLICATION_ID=...
-    ```
-  - Add vonage to secrets to `secrets/private.key`
-
-2. **Set up ngrok:**
-   - Install `ngrok`, then run the command to expose your FastAPI server:
-     ```bash
-     ngrok http 8000  # For Vonage
-     ngrok http 5000  # For Plivo
-     ```
-
-3. **Get the ngrok public URL:**
-   - In the ngrok terminal, a public URL will be displayed, e.g., `https://abcd-1234-5678.ngrok.io`.
-
-
-4. **Install the required dependencies:**
+1. **Install the required dependencies:**
    - Run the following command to install the necessary Python packages:
      ```bash
      pip install -r requirements.txt
      ```
 
-5. **Run the FastAPI application:**
-   - For Vonage: 
+2. **Set up ngrok:**
+   - Install `ngrok`, then run the command to expose your FastAPI server:
      ```bash
-     python vonage_example/vonage_app.py
-     ```
-   - For Plivo: **(Update the ngrok URL and path in the script first!)**
-     ```bash
-     python plivo_example/plivo_app.py
+     ngrok http 5001 # Use this port for all apps
      ```
 
-6. **Run the phonetic call client: (Update the phone numbers, ngrok URL and path in the script first!)**
-   - For Vonage:
+3. **Get the ngrok public URL:**
+   - In the ngrok terminal, a public URL will be displayed, e.g., `https://abcd-1234-5678.ngrok.io`.
+
+4. **Config:**
+  - Change `config.yaml` and replace with your keys, secrets and ngrok url.
+  - Add vonage secrets to `secrets/private.key`
+
+5. **Script:**
+  - Change `script.json` and change the text and voice_id as per need.
+
+6. **Run the FastAPI application in a new terminal:**
+   - For each provider - go to their respective folder and run 
      ```bash
-     python vonage_example/vonage_make_call.py
+     python {telephony_provider}_app.py
      ```
-   - For Plivo:
+
+     Where , {telephony_provider} can assume any one value from - `plivo`, `vonage` or `twilio`.
+
+7. **Run the phonetic call client in a new terminal: (Update the phone numbers, ngrok URL and path in the config.yaml first!)**
+   - For each provider - go to their respective folder and run 
      ```bash
-     python plivo_example/plivo_make_call.py
+     python {telephony_provider}_make_call.py
      ```
+
+     Where , {telephony_provider} can assume any one value from - `plivo`, `vonage` or `twilio`.
 
 ---
 
 **Note:** If you have a public URL for your application, ngrok is not required.
 
-This setup allows seamless phonetic call testing using both Vonage and Plivo platforms.
+This setup allows seamless phonetic call testing using both Vonage, Plivo and Twilio platforms.
