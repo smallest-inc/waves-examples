@@ -5,3 +5,8 @@ pydub==0.25.1
 uvicorn
 python-dotenv
 plivo
+jinja2
+numpy
+aiohttp
+python-dotenv
+twilio
