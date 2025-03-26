@@ -1,0 +1,12 @@
+vonage==3.17.1
+fastapi==0.112.2
+websockets==13.0.1
+pydub==0.25.1
+uvicorn
+python-dotenv
+plivo
+jinja2
+numpy
+aiohttp
+python-dotenv
+twilio

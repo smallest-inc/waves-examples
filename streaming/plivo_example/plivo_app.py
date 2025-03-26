@@ -30,7 +30,7 @@ timeout = 1  # Timeout for receiving messages in seconds
 # API authentication token
 TOKEN = os.environ.get("SMALLEST_API_KEY")
 EXTRA_HEADERS = {"origin": "https://smallest.ai"}
-url = "https://waves-api.smallest.ai/api/v1/lightning/get_speech"
+url = "https://waves-api.smallest.ai/api/v1/lightning-large/stream"
 
 # Example payload for speech synthesis
 with open("script.json", "r") as script_file:
@@ -113,27 +113,45 @@ async def websocket_endpoint(ws: WebSocket):
                 if data["event"] == "start":
                     stream_id = data["start"]["streamId"]
 
-                http_response = requests.post(url, json=payload, headers=headers)
-                if http_response.status_code != 200:
-                    print(f"Error: {http_response.status_code}")
-                    return
+                try:
+                    start = time.time()
+                    http_response = requests.post(url, json=payload, headers=headers, stream=True)
+                    print(f"TTFB: {1000 * (time.time() - start):.2f} ms")
+                    http_response.raise_for_status()
+                    
+                    audio_chunks = []
+                    for line in http_response.iter_lines():
+                        try:
+                            chunk = line.decode('utf-8')
+                            if chunk.startswith("data: "):
+                                data = json.loads(chunk[6:])
+                                if "audio" in data:
+                                    audio_data = base64.b64decode(data["audio"])
+                                    audio_chunks.append(audio_data)
+                                    
+                                    # Send audio data over WebSocket
+                                    await ws.send_text(
+                                        json.dumps(
+                                            {
+                                                "event": "playAudio",
+                                                "media": {
+                                                    "payload": base64.b64encode(audio_data).decode("utf-8"),
+                                                    "sampleRate": 8000,
+                                                    "contentType": "audio/x-l16",
+                                                },
+                                            }
+                                        )
+                                    )
+                        except json.JSONDecodeError as je:
+                            print(f"JSON Decode Error: {je}")
+                        except Exception as e:
+                            print(f"Error processing chunk: {e}")
+                    
+                    print(f"Total audio chunks: {len(audio_chunks)}")
+                    print(f"Total audio size: {sum(len(chunk) for chunk in audio_chunks)} bytes")
+                except Exception as e:
+                    print(f"Error in audio streaming: {e}")
 
-                async for audio_chunk in waves_streaming(http_response.content):
-                    if audio_chunk:
-                        await ws.send_text(
-                            json.dumps(
-                                {
-                                    "event": "playAudio",
-                                    "media": {
-                                        "payload": base64.b64encode(audio_chunk).decode(
-                                            "utf-8"
-                                        ),
-                                        "sampleRate": 8000,
-                                        "contentType": "audio/x-l16",
-                                    },
-                                }
-                            )
-                        )
                 time.sleep(5)  # simulate gap between two payloads.
             break
     except WebSocketDisconnect:

@@ -26,7 +26,7 @@ CLOSE_CONNECTION_TIMEOUT = 500  # Maximum connection duration in seconds
 # Fetch API key from environment variables
 TOKEN = os.environ.get("SMALLEST_API_KEY")
 EXTRA_HEADERS = {"origin": "https://smallest.ai"}
-url = "http://waves-api.smallest.ai/api/v1/lightning/get_speech"
+url = "https://waves-api.smallest.ai/api/v1/lightning/get_speech"
 
 print(url)  # Print API endpoint for debugging
 

@@ -2,37 +2,37 @@
     "episode": 
         [
             {
-                "voice_id": "arman",
+                "voice_id": "andrea",
                 "text": "Welcome to Waves of the day podcast, where we discuss the latest advancements in artificial intelligence and machine learning. I'm your host, pragya.",
-                "speed": 1.2,
+                "speed": 1.0,
                 "add_wav_header": false,
                 "sample_rate": 8000
             },
             {
-                "voice_id": "raman",
+                "voice_id": "chirag",
                 "text": "And I'm raman. Today, we're going to talk about Smallest dot ai, a groundbreaking platform that's making AI more accessible and efficient for everyone.",
-                "speed": 1.2,
+                "speed": 1.0,
                 "add_wav_header": false,
                 "sample_rate": 8000
             },
             {
-                "voice_id": "pragya",
+                "voice_id": "andrea",
                 "text": "That's right, raman. Smallest dot AI is designed to provide powerful Speech AI tools that are easy to use, even for those who may not have a deep technical background.",
-                "speed": 1.2,
+                "speed": 1.0,
                 "add_wav_header": false,
                 "sample_rate": 8000
             },
             {
-                "voice_id": "raman",
+                "voice_id": "chirag",
                 "text": "Exactly. This means that businesses and developers can deploy AI solutions on devices with limited resources.",
-                "speed": 1.2,
+                "speed": 1.0,
                 "add_wav_header": false,
                 "sample_rate": 8000
             },
             {
-                "voice_id": "pragya",
+                "voice_id": "andrea",
                 "text": "That's it for today. Stay tuned for more updates. Thanks for listening!",
-                "speed": 1.2,
+                "speed": 1.0,
                 "add_wav_header": false,
                 "sample_rate": 8000
             }

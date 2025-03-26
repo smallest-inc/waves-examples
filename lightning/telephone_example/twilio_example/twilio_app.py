@@ -30,7 +30,7 @@ templates = Jinja2Templates(directory=xml_path)
 
 # Waves API Configuration
 TOKEN = os.environ.get("SMALLEST_API_KEY")  # Fetch API key from environment variables
-url = f"http://waves-api.smallest.ai/api/v1/lightning/get_speech"  # TTS API endpoint
+url = f"https://waves-api.smallest.ai/api/v1/lightning/get_speech"  # TTS API endpoint
 
 # Example payload for speech synthesis
 with open("script.json", "r") as script_file:
