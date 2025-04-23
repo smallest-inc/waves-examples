@@ -10,7 +10,7 @@ The Lightning Large model provides high-quality text-to-speech capabilities with
 
 - Python 3.6+
 - Smallest AI API key
-- Required packages: `websocket-cli`
+- Required packages: `websocket-client`
 
 ## Installation
 

@@ -13,8 +13,8 @@ HEADERS = {
         f"Bearer {TOKEN}"
     )
 }
-VOICE_ID    = "chirag"
-SAMPLE_TEXT = "Hello world! This is a test. How are you doing today?"
+VOICE_ID    = "<VOICE>"
+SAMPLE_TEXT = "<TEXT>"
 OUTPUT_PATH = "output.wav"
 SAMPLE_RATE = 24000
 SPEED      = 1.0
