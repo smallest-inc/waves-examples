@@ -1,6 +1,6 @@
-# Streaming TTS with Lightning Large Model
+# Websocket Streaming TTS with Lightning Large Model
 
-This guide demonstrates how to stream text-to-speech (TTS) audio using the Lightning Large model via Smallest AI's Waves API.
+This guide demonstrates how to use text-to-speech (TTS) using Websocket audio using the Lightning Large model via Smallest AI's Waves API.
 
 ## Overview
 
@@ -10,19 +10,19 @@ The Lightning Large model provides high-quality text-to-speech capabilities with
 
 - Python 3.6+
 - Smallest AI API key
-- Required packages: `requests` and `pydub`
+- Required packages: `websocket-cli`
 
 ## Installation
 
 Install the required dependencies:
 
 ```bash
-pip install requests pydub
+pip install websocket-cli
 ```
 
 ## Usage
 
-The `streaming_api.py` script demonstrates how to use the streaming API to convert text to speech and save the result as a WAV file.
+The `ws_streaming_api.py` script demonstrates how to use the streaming API to convert text to speech and save the result as a WAV file.
 
 ### Basic Usage
 
@@ -34,7 +34,7 @@ The `streaming_api.py` script demonstrates how to use the streaming API to conve
 2. Run the script:
 
 ```bash
-python streaming_api.py
+python ws_streaming_api.py
 ```
 
 The script will output a file named `output.wav` containing the generated speech.
@@ -56,31 +56,11 @@ The payload supports the following parameters:
 
 ## How It Works
 
-1. The script sends a POST request to the streaming endpoint
-2. The API responds with a stream of audio chunks
+1. The script first creates three-way handshake with Web Socket
+2. Then it sends the payload to WebSocket
 3. Each chunk is decoded and written to a WAV file
 4. The script measures performance metrics like TTFB
-
-## Custom Implementation
-
-To implement streaming in your own application:
-
-```python
-from streaming_api import stream
-
-payload = {
-     "text": "Hello, world!",
-     "voice_id": "your_voice_id",
-     "sample_rate": 24000,
-}
-
-headers = {
-     "Authorization": "Bearer your_api_key",
-     "Content-Type": "application/json"
-}
-
-stream(payload, headers)
-```
+5. When connection is closed, it saves the audio as `output.wav`
 
 ## Troubleshooting
 
