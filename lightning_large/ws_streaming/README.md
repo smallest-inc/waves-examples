@@ -17,7 +17,7 @@ The Lightning Large model provides high-quality text-to-speech capabilities with
 Install the required dependencies:
 
 ```bash
-pip install websocket-cli
+pip install websocket-client
 ```
 
 ## Usage
