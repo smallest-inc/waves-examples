@@ -6,8 +6,8 @@ import wave
 from websocket import WebSocketApp
 
 # =========== CONFIG ===========
-WS_URL = "wss://waves-api.smallest.ai/api/v1/lightning-large/get_speech/stream"
-TOKEN = ""
+WS_URL = "wss://waves-api.smallest.ai/api/v1/lightning-v2/get_speech/stream"
+TOKEN = "<AUTH TOKEN>"
 HEADERS = {
     "Authorization": (
         f"Bearer {TOKEN}"

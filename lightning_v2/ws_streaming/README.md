@@ -1,10 +1,10 @@
-# Websocket Streaming TTS with Lightning Large Model
+# Websocket Streaming TTS with Lightning-V2 Model
 
-This guide demonstrates how to use text-to-speech (TTS) using Websocket audio using the Lightning Large model via Smallest AI's Waves API.
+This guide demonstrates how to use text-to-speech (TTS) using Websocket audio using the Lightning V2 model via Smallest AI's Waves API.
 
 ## Overview
 
-The Lightning Large model provides high-quality text-to-speech capabilities with streaming support, allowing you to start playing audio before the entire speech generation is complete.
+The Lightning V2 model provides high-quality text-to-speech capabilities with streaming support, allowing you to start playing audio before the entire speech generation is complete.
 
 ## Prerequisites
 
@@ -67,7 +67,7 @@ The payload supports the following parameters:
 If you encounter issues:
 
 - Verify your API key is valid
-- Check that the voice ID is available for Lightning Large
+- Check that the voice ID is available for Lightning V2
 - Ensure your text doesn't exceed maximum length
 - Check your internet connection
 
