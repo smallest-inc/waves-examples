@@ -7,7 +7,7 @@ from websocket import WebSocketApp
 
 # =========== CONFIG ===========
 WS_URL = "wss://waves-api.smallest.ai/api/v1/lightning-v2/get_speech/stream"
-TOKEN = "<AUTH TOKEN>"
+TOKEN = "<AUTH_TOKEN>"
 HEADERS = {
     "Authorization": (
         f"Bearer {TOKEN}"
@@ -58,6 +58,11 @@ def tts_and_save(text, voice_id, output_path):
     def on_message(ws, message):
         nonlocal ttfb_ms
         data = json.loads(message)
+        status = data.get("status") or data.get("payload", {}).get("status")
+
+        if status == "error":
+            raise Exception(data.get("message", "Unknown error"))
+
         audio_b64 = data.get("data", {}).get("audio")
 
         # measure TTFB on first chunk
@@ -69,7 +74,6 @@ def tts_and_save(text, voice_id, output_path):
             audio_chunks.append(audio_b64)
 
         # close once complete
-        status = data.get("status") or data.get("payload", {}).get("status")
         if status == "complete":
             ws.close()
 
