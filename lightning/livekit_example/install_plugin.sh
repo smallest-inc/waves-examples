@@ -6,4 +6,4 @@ if [[ -z "$VIRTUAL_ENV" ]]; then
     exit 1
 fi
 
-pip install -e ./livekit-plugins-smallest --config-settings editable_mode=strict # change the path accordingly
+pip install -e ./livekit-plugins-smallestai --config-settings editable_mode=strict # change the path accordingly

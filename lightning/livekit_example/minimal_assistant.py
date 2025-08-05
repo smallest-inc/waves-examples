@@ -1,66 +1,82 @@
 import logging
 
 from dotenv import load_dotenv
+
 from livekit.agents import (
-    AutoSubscribe,
+    Agent,
+    AgentSession,
     JobContext,
     JobProcess,
+    RoomInputOptions,
+    RoomOutputOptions,
+    RunContext,
     WorkerOptions,
     cli,
-    llm,
+    metrics,
     tts,
-    tokenize
+    tokenize,
 )
-from livekit.agents.pipeline import VoicePipelineAgent
-from livekit.plugins import openai, deepgram, silero, smallest
+from livekit.agents.llm import function_tool
+from livekit.agents.voice import MetricsCollectedEvent
+from livekit.plugins import deepgram, openai, silero, smallestai
 
 
-load_dotenv(dotenv_path=".env")
-logger = logging.getLogger("voice-agent")
+logger = logging.getLogger("basic-agent")
 
+load_dotenv()
+
+class MyAgent(Agent):
+    def __init__(self) -> None:
+        super().__init__(
+            instructions="You are a voice assistant created by Smallest. Your interface with users will be voice and your task it to be a helpful assistant",
+        )
+
+    async def on_enter(self):
+        self.session.generate_reply()
+        
 
 def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
 
 
 async def entrypoint(ctx: JobContext):
-    initial_ctx = llm.ChatContext().append(
-        role="system",
-        text=(
-            "You are a voice assistant created by Smallest. Your interface with users will be voice and your task it to be a helpful assistant."
-        ),
-    )
-
-    logger.info(f"connecting to room {ctx.room.name}")
-    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
-
-    # Wait for the first participant to connect
-    participant = await ctx.wait_for_participant()
-    logger.info(f"starting voice assistant for participant {participant.identity}")
-
-    # Since lightning model does not natively support streaming TTS, we can use it with a StreamAdapter (Optional)
+    ctx.log_context_fields = {
+        "room": ctx.room.name,
+    }
+    
     smallest_tts = tts.StreamAdapter(
-        tts=smallest.TTS(),
+        tts=smallestai.TTS(),
         sentence_tokenizer=tokenize.basic.SentenceTokenizer(),
     )
 
-    assistant = VoicePipelineAgent(
+    session = AgentSession(
         vad=ctx.proc.userdata["vad"],
-        stt=deepgram.STT(),
         llm=openai.LLM(model="gpt-4o-mini"),
-        tts=smallest.TTS(), # replace with smallest_tts to use smallest with streaming
-        chat_ctx=initial_ctx,
+        stt=deepgram.STT(model="nova-3", language="multi"),
+        tts=smallest_tts,
     )
 
-    assistant.start(ctx.room, participant)
+    usage_collector = metrics.UsageCollector()
 
-    await assistant.say("Hey, how can I help you today?", allow_interruptions=True)
+    @session.on("metrics_collected")
+    def _on_metrics_collected(ev: MetricsCollectedEvent):
+        metrics.log_metrics(ev.metrics)
+        usage_collector.collect(ev.metrics)
+
+    async def log_usage():
+        summary = usage_collector.get_summary()
+        logger.info(f"Usage: {summary}")
+
+    # shutdown callbacks are triggered when the session is over
+    ctx.add_shutdown_callback(log_usage)
+
+    await session.start(
+        agent=MyAgent(),
+        room=ctx.room,
+        room_input_options=RoomInputOptions(),
+        room_output_options=RoomOutputOptions(transcription_enabled=True),
+    )
 
 
 if __name__ == "__main__":
-    cli.run_app(
-        WorkerOptions(
-            entrypoint_fnc=entrypoint,
-            prewarm_fnc=prewarm,
-        ),
-    )
+    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))

@@ -1,7 +1,7 @@
 import asyncio
 import aiohttp
 import wave
-from livekit.plugins import smallest
+from livekit.plugins import smallestai
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -10,7 +10,7 @@ async def test_tts():
     # Create an aiohttp session
     async with aiohttp.ClientSession() as session:
         # Create TTS instance with the session
-        tts = smallest.TTS(
+        tts = smallestai.TTS(
             http_session=session  # Pass the aiohttp session here
         )
 
