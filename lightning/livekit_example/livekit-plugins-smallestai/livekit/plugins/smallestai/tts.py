@@ -15,11 +15,8 @@
 from __future__ import annotations
 
 import asyncio
-import base64
-import json
 import os
 import re
-import weakref
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -29,14 +26,12 @@ from livekit.agents import (
     DEFAULT_API_CONNECT_OPTIONS,
     APIConnectionError,
     APIConnectOptions,
-    APIError,
     APIStatusError,
     APITimeoutError,
-    tokenize,
     tts,
     utils,
 )
-from livekit.agents.types import NotGiven, DEFAULT_API_CONNECT_OPTIONS, NOT_GIVEN, NotGivenOr
+from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS, NOT_GIVEN, NotGivenOr
 from livekit.agents.utils import is_given
 
 from .log import logger
@@ -61,9 +56,6 @@ class _TTSOptions:
     output_format: TTSEncoding | str
     base_url: str
 
-    def get_ws_url(self) -> str:
-        return f"{self.base_url.replace('http', 'ws', 1)}/{self.model}/get_speech/stream"
-
 
 class TTS(tts.TTS):
     def __init__(
@@ -81,7 +73,6 @@ class TTS(tts.TTS):
         output_format: TTSEncoding | str = "pcm",
         base_url: str = SMALLEST_BASE_URL,
         http_session: aiohttp.ClientSession | None = None,
-        tokenizer: NotGivenOr[tokenize.SentenceTokenizer] = NOT_GIVEN,
     ) -> None:
         """
         Create a new instance of smallest.ai Waves TTS.
@@ -102,7 +93,7 @@ class TTS(tts.TTS):
         """
 
         super().__init__(
-            capabilities=tts.TTSCapabilities(streaming=True),
+            capabilities=tts.TTSCapabilities(streaming=False),
             sample_rate=sample_rate,
             num_channels=NUM_CHANNELS,
         )
@@ -130,25 +121,6 @@ class TTS(tts.TTS):
             base_url=base_url,
         )
         self._session = http_session
-        self._pool = utils.ConnectionPool[aiohttp.ClientWebSocketResponse](
-            connect_cb=self._connect_ws,
-            close_cb=self._close_ws,
-            max_session_duration=300,
-            mark_refreshed_on_get=True,
-        )
-        self._streams = weakref.WeakSet[SynthesizeStream]()
-        self._sentence_tokenizer = (
-            tokenizer if is_given(tokenizer) else tokenize.blingfire.SentenceTokenizer()
-        )
-
-    async def _connect_ws(self, timeout: float) -> aiohttp.ClientWebSocketResponse:
-        session = self._ensure_session()
-        url = self._opts.get_ws_url()
-        headers = {"Authorization": f"Bearer {self._opts.api_key}"}
-        return await asyncio.wait_for(session.ws_connect(url, headers=headers), timeout)
-
-    async def _close_ws(self, ws: aiohttp.ClientWebSocketResponse) -> None:
-        await ws.close()
 
     def _ensure_session(self) -> aiohttp.ClientSession:
         if not self._session:
@@ -201,26 +173,6 @@ class TTS(tts.TTS):
             conn_options=conn_options,
         )
 
-    def stream(
-        self, *, conn_options: APIConnectOptions = DEFAULT_API_CONNECT_OPTIONS
-    ) -> SynthesizeStream:
-        """
-        Returns a stream for text-to-speech synthesis.
-        Note: WebSocket streaming is only supported for 'lightning-large' and 'lightning-v2' models.
-        """
-        if self._opts.model not in ["lightning-large", "lightning-v2"]:
-            raise ValueError(
-                f"Streaming is only supported for 'lightning-large' and 'lightning-v2' models, but '{self._opts.model}' was provided."
-            )
-        stream = SynthesizeStream(tts=self, conn_options=conn_options)
-        return stream
-
-    async def aclose(self) -> None:
-        for stream in list(self._streams):
-            await stream.aclose()
-        self._streams.clear()
-        await self._pool.aclose()
-
 
 class ChunkedStream(tts.ChunkedStream):
     """Synthesize chunked text using the Waves API endpoint"""
@@ -256,7 +208,7 @@ class ChunkedStream(tts.ChunkedStream):
                     timeout=aiohttp.ClientTimeout(total=30, sock_connect=self._conn_options.timeout)
                 ) as resp:
                     resp.raise_for_status()
-                    
+
                     output_emitter.initialize(
                         request_id=utils.shortuuid(),
                         sample_rate=self._opts.sample_rate,
@@ -276,99 +228,6 @@ class ChunkedStream(tts.ChunkedStream):
                 ) from None
             except Exception as e:
                 raise APIConnectionError() from e
-
-
-class SynthesizeStream(tts.SynthesizeStream):
-    def __init__(self, *, tts: TTS, conn_options: APIConnectOptions):
-        super().__init__(tts=tts, conn_options=conn_options)
-        self._tts: TTS = tts
-        self._opts = replace(tts._opts)
-
-    async def _run(self, output_emitter: tts.AudioEmitter) -> None:
-        request_id = utils.shortuuid()
-        output_emitter.initialize(
-            request_id=request_id,
-            sample_rate=self._opts.sample_rate,
-            num_channels=NUM_CHANNELS,
-            mime_type="audio/pcm",
-            stream=True,
-        )
-
-        sent_tokenizer_stream = self._tts._sentence_tokenizer.stream()
-
-        async def _sentence_stream_task(ws: aiohttp.ClientWebSocketResponse) -> None:
-            base_pkt = _to_smallest_options(self._opts)
-            async for ev in sent_tokenizer_stream:
-                token_pkt = base_pkt.copy()
-                token_pkt["text"] = ev.token
-                token_pkt["continue"] = True
-                self._mark_started()
-                await ws.send_str(json.dumps(token_pkt))
-            
-            end_pkt = base_pkt.copy()
-            end_pkt["text"] = " "
-            end_pkt["continue"] = False
-            await ws.send_str(json.dumps(end_pkt))
-
-        async def _input_task() -> None:
-            async for data in self._input_ch:
-                if isinstance(data, self._FlushSentinel):
-                    sent_tokenizer_stream.flush()
-                    continue
-                sent_tokenizer_stream.push_text(data)
-            sent_tokenizer_stream.end_input()
-
-        async def _recv_task(ws: aiohttp.ClientWebSocketResponse) -> None:
-            segment_id = utils.shortuuid()
-            output_emitter.start_segment(segment_id=segment_id)
-            while True:
-                msg = await ws.receive()
-                if msg.type in (
-                    aiohttp.WSMsgType.CLOSED,
-                    aiohttp.WSMsgType.CLOSE,
-                    aiohttp.WSMsgType.CLOSING,
-                ):
-                    raise APIStatusError(
-                        "Smallest AI connection closed unexpectedly", request_id=request_id
-                    )
-
-                if msg.type != aiohttp.WSMsgType.TEXT:
-                    logger.warning("unexpected Smallest AI message type %s", msg.type)
-                    continue
-
-                data = json.loads(msg.data)
-                status = data.get("status") or data.get("payload", {}).get("status")
-
-                if status == "error":
-                    raise APIError(f"Smallest AI returned error: {data}")
-                    
-                if audio_b64 := data.get("data", {}).get("audio"):
-                    pcm_data = base64.b64decode(audio_b64)
-                    output_emitter.push(pcm_data)
-
-                if status == "complete":
-                    output_emitter.end_input()
-                    break
-
-        try:
-            async with self._tts._pool.connection(timeout=self._conn_options.timeout) as ws:
-                tasks = [
-                    asyncio.create_task(_input_task()),
-                    asyncio.create_task(_sentence_stream_task(ws)),
-                    asyncio.create_task(_recv_task(ws)),
-                ]
-                try:
-                    await asyncio.gather(*tasks)
-                finally:
-                    await utils.aio.gracefully_cancel(*tasks)
-        except asyncio.TimeoutError:
-            raise APITimeoutError() from None
-        except aiohttp.ClientResponseError as e:
-            raise APIStatusError(
-                message=e.message, status_code=e.status, request_id=None, body=None
-            ) from None
-        except Exception as e:
-            raise APIConnectionError() from e
 
 
 def _to_smallest_options(opts: _TTSOptions) -> dict[str, Any]:
