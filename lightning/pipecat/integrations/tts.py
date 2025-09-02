@@ -33,13 +33,13 @@ from pipecat.utils.text.skip_tags_aggregator import SkipTagsAggregator
 from pipecat.utils.tracing.service_decorators import traced_tts
 
 
-class WavesTTSModel(Enum):
-    """Supported models for the Waves API."""
+class SmallestTTSModel(Enum):
+    """Supported models for the Smallest API."""
 
     LIGHTNING_V2 = "lightning-v2"
 
 
-def language_to_waves_language(language: Language) -> Optional[str]:
+def language_to_smallest_language(language: Language) -> Optional[str]:
     BASE_LANGUAGES = {
         Language.AR: "ar",
         Language.BN: "bn",
@@ -69,14 +69,14 @@ def language_to_waves_language(language: Language) -> Optional[str]:
     return result
 
 
-def get_waves_url(model: str) -> str:
-    if model == WavesTTSModel.LIGHTNING_V2:
+def get_smallest_url(model: str) -> str:
+    if model == SmallestTTSModel.LIGHTNING_V2:
         return "wss://waves-api.smallest.ai/api/v1/lightning-v2/get_speech/stream?timeout=60"
     else:
         raise ValueError(f"Invalid model: {model}")
 
 
-class WavesTTSService(InterruptibleTTSService):
+class SmallestTTSService(InterruptibleTTSService):
     class InputParams(BaseModel):
         language: Optional[Language] = Language.EN
         speed: Optional[Union[str, float]] = 1.0
@@ -107,7 +107,7 @@ class WavesTTSService(InterruptibleTTSService):
         )
 
         self._api_key = api_key
-        self._url = get_waves_url(model)
+        self._url = get_smallest_url(model)
         self._settings = {
             "output_format": {
                 "container": "wav",
@@ -136,7 +136,7 @@ class WavesTTSService(InterruptibleTTSService):
         logger.info(f"Switching TTS model to: [{model}]")
 
     def language_to_service_language(self, language: Language) -> Optional[str]:
-        return language_to_waves_language(language)
+        return language_to_smallest_language(language)
 
     def _build_msg(self, text: str = ""):
         voice_config = {}
@@ -200,7 +200,7 @@ class WavesTTSService(InterruptibleTTSService):
             await self.stop_all_metrics()
 
             if self._websocket:
-                logger.debug("Disconnecting from Waves")
+                logger.debug("Disconnecting from Smallest AI")
                 await self._websocket.close()
         except Exception as e:
             logger.error(f"{self} error closing websocket: {e}")
